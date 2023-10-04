@@ -31,7 +31,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         ActivityResultContracts.StartActivityForResult()
     ) {
         if (it.resultCode == CameraActivity.SUCCESS_RESULT_CODE) {
-            // TODO("Обновить точки на карте при получении результата от камеры")
+            showPreviewsOnMap()
         }
     }
 
@@ -43,7 +43,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
-        // TODO("Вызвать инициализацию карты")
+        mapFragment.getMapAsync(this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -72,23 +72,28 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun showPreviewsOnMap() {
         map.clear()
         val folder = File("${filesDir.absolutePath}/photos/")
-        folder.listFiles()?.forEach {
-            val exifInterface = ExifInterface(it)
+        folder.listFiles()?.forEach { file ->
+            val exifInterface = ExifInterface(file)
             val location = locationDataUtils.getLocationFromExif(exifInterface)
             val point = LatLng(location.latitude, location.longitude)
+
             val pinBitmap = Bitmap.createScaledBitmap(
                 BitmapFactory.decodeFile(
-                    it.path,
+                    file.path,
                     BitmapFactory.Options().apply {
                         inPreferredConfig = Bitmap.Config.ARGB_8888
                     }), 64, 64, false
             )
-            // TODO("Указать pinBitmap как иконку для маркера")
+
+            val bitMapDescriptor = BitmapDescriptorFactory.fromBitmap(pinBitmap)
+
             map.addMarker(
                 MarkerOptions()
                     .position(point)
+                    .icon(bitMapDescriptor)
             )
-            // TODO("Передвинуть карту к местоположению последнего фото")
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(point, 15f))
+            map.moveCamera(CameraUpdateFactory.newLatLng(point))
         }
     }
 }
